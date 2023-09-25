@@ -1,0 +1,128 @@
+<!-- En index.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mapa de Polígonos</title>
+  <!-- Tailwind -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    @import url('https://fonts.googleapis.com/css?family=Karla:400,700&display=swap');
+    .font-family-karla { font-family: karla; }
+    .bg-sidebar { background: #133A53; }
+    .cta-btn { color: #133A53; }
+    .upgrade-btn { background: #1947ee; }
+    .upgrade-btn:hover { background: #0038fd; }
+    .active-nav-link { background: #1947ee; }
+    .nav-item:hover { background: #1947ee; }
+    .account-link:hover { background: #133A53; }
+
+    #map {
+      height: calc(100vh - 65px);
+      /* width: 75%; */
+    }
+  </style>
+</head>
+<body class="bg-gray-100 font-family-karla flex">
+  <aside class="relative bg-sidebar h-screen w-1/4 hidden sm:block shadow-xl">
+    <div class="p-4 border-b border-blue-200 border-opacity-25">
+      <a href="index.html" class="text-white text-2xl font-semibold uppercase hover:text-gray-300">Cobertura</a>
+    </div>
+    <div class="p-4">
+      <div id="wrapperFile" class="mb-8">
+        <form id="formFile" class="space-y-4" onsubmit="event.preventDefault(); uploadMapFile();">
+          <div>            
+            <label class="text-sm font-medium text-gray-200 block mb-2 font-semibold uppercase" for="file_input">Cargar mapa</label>
+            <input class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" id="fileInput" type="file" onchange="activateSubmit()">
+            <p class="mt-1 text-sm text-gray-300 dark:text-gray-300" id="file_input_help">Cargar solo archivos KML</p>
+          </div>
+          <div class="flex justify-center gap-4">
+            <button type="submit" class="flex-grow text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 opacity-50 cursor-not-allowed" id="fileBtnSubmit" disabled>Cargar</button>
+            <button type="button" class="flex-grow text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-800" id="clearMap">Limpiar</button>
+          </div>
+        </form>
+      </div>
+      <div id="wrapperForm">
+        <form id="formAddress" class="space-y-4">
+          <div>
+            <label for="department" class="text-sm font-medium text-gray-200 block mb-2 font-semibold uppercase">Departamento</label>
+            <select id="department" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white">
+              <option value>Seleccione</option>
+            </select>
+          </div>
+          <div>
+            <label for="province" class="text-sm font-medium text-gray-200 block mb-2 font-semibold uppercase">Provincia</label>
+            <select id="province" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" disabled>
+              <option value>Seleccione</option>
+            </select>
+          </div>
+          <div>
+            <label for="district" class="text-sm font-medium text-gray-200 block mb-2 font-semibold uppercase">Distrito</label>
+            <select id="district" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" disabled>
+              <option value>Seleccione</option>
+            </select>
+          </div>
+          <div>
+            <label for="address" class="text-sm font-medium text-gray-200 block mb-2 font-semibold uppercase">Dirección</label>
+            <input type="text" name="address" id="address" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white opacity-70 cursor-not-allowed" placeholder="Av. El Derby 254" disabled required="">
+          </div>
+          <button type="submit" class="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">Validar</button>
+        </form>
+      </div>
+    </div>
+  </aside>
+
+  <div class="relative w-full flex flex-col h-screen overflow-y-hidden">
+    <!-- Desktop Header -->
+    <header class="w-full items-center bg-white py-2 px-6 hidden sm:flex">
+      <div class="w-1/2"></div>
+      <div x-data="{ isOpen: false }" class="relative w-1/2 flex justify-end">
+        <button @click="isOpen = !isOpen" class="realtive z-10 w-12 h-12 rounded-full overflow-hidden border-4 border-gray-400 hover:border-gray-300 focus:border-gray-300 focus:outline-none">
+          <img src="https://source.unsplash.com/7YVZYZeITc8/400x400">
+        </button>
+        <button x-show="isOpen" @click="isOpen = false" class="h-full w-full fixed inset-0 cursor-default"></button>
+        <div x-show="isOpen" class="absolute w-32 bg-white rounded-lg shadow-lg py-2 mt-16 z-50">
+          <a href="#" class="block px-4 py-2 account-link hover:text-white">Sign Out</a>
+        </div>
+      </div>
+    </header>
+
+    <!-- Mobile Header & Nav -->
+    <header x-data="{ isOpen: false }" class="w-full bg-sidebar py-5 px-6 sm:hidden">
+      <div class="flex items-center justify-between">
+        <a href="index.html" class="text-white text-2xl font-semibold uppercase hover:text-gray-300">Cobertura</a>
+        <button @click="isOpen = !isOpen" class="text-white text-3xl focus:outline-none">
+          <i x-show="!isOpen" class="fas fa-bars"></i>
+          <i x-show="isOpen" class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <!-- Dropdown Nav -->
+      <nav :class="isOpen ? 'flex': 'hidden'" class="flex flex-col pt-4 z-50">
+        <a href="blank.html" class="flex items-center active-nav-link text-white py-2 pl-4 nav-item">
+          <i class="fas fa-sticky-note mr-3"></i>
+          Mapa
+        </a>
+      </nav>
+    </header>
+
+    <div class="w-full h-screen overflow-x-hidden border-t flex flex-col">
+      <main class="w-full flex-grow">
+        <!-- Content goes here! 😁 -->
+        <div id="map" class="mx-auto"></div>
+      </main>
+    </div>
+    
+  </div>
+
+  <!-- Google Maps -->
+  <script async src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDZchIA-EhrQm_zL-EuXsLvkw13-jOIqXs&callback=initMap" defer>
+  </script>
+  <script src="main.js"></script>
+  <!-- AlpineJS -->
+  <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.x.x/dist/alpine.min.js" defer></script>
+  <!-- Font Awesome -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.13.0/js/all.min.js" integrity="sha256-KzZiKy0DWYsnwMF+X1DvQngQ2/FxF7MF3Ff72XcpuPs=" crossorigin="anonymous"></script>
+</body>
+</html>
