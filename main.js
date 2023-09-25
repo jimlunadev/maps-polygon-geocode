@@ -1,6 +1,6 @@
 // En script.js
-// const PATH = 'https://development-phoenix-api.ws.solera.pe';
-const PATH = 'http://localhost:8890';
+const PATH = 'https://development-phoenix-api.ws.solera.pe';
+// const PATH = 'http://localhost:8890';
 
 window.onload = () => {
   loadLocationSelect('department');
